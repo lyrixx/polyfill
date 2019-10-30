@@ -27,6 +27,11 @@ class TestListenerTrait
         $SkippedTestError = class_exists('PHPUnit\Framework\SkippedTestError') ? 'PHPUnit\Framework\SkippedTestError' : 'PHPUnit_Framework_SkippedTestError';
 
         foreach ($mainSuite->tests() as $suite) {
+            // We do not want to test the uuid polyfill on PHP < 7
+            // Since this script try to load the SUT, we must skip it
+            if ('Symfony\Polyfill\Tests\Uuid\UuidTest' === $suite->getName() && version_compare('7.0.0', PHP_VERSION, '>=')) {
+                continue;
+            }
             $testClass = $suite->getName();
             if (!$tests = $suite->tests()) {
                 continue;
@@ -109,8 +114,10 @@ EOPHP
                 $mainSuite->addTest(new TestListener($suite));
             }
         }
-        foreach ($warnings as $w) {
-            $mainSuite->addTest($w);
+        if (isset($warnings)) {
+            foreach ($warnings as $w) {
+                $mainSuite->addTest($w);
+            }
         }
     }
 
